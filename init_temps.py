@@ -13,7 +13,7 @@ def get_cpu_serial()->str:
     Get CPU serial id to use it as MSQT device ID
     Returns: CPU ID
     """
-    cpuserial = None
+    cpuserial = '0000000000000'
     try:
         with open('/proc/cpuinfo','r') as f:
             lines= f.readlines()
