@@ -1,0 +1,18 @@
+[Unit]
+Description=MQTT to Aranet DS1828
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+#Type=idle
+Environment="SCRIPT_ARGS=-c /opt/thermo/config.ini"
+ExecStart="/opt/thermo/run_thermo.py" $SCRIPT_ARGS
+
+WorkingDirectory=/opt/thermo/
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+[Install]
+WantedBy=multi-user.target

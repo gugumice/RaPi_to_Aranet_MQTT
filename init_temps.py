@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import logging
-import os
+import os, socket
 import argparse
 import configparser
 from time import sleep
@@ -13,7 +13,7 @@ def get_cpu_serial()->str:
     Get CPU serial id to use it as MSQT device ID
     Returns: CPU ID
     """
-    cpuserial = '0000000000000'
+    cpuserial = None
     try:
         with open('/proc/cpuinfo','r') as f:
             lines= f.readlines()
@@ -26,10 +26,10 @@ def get_cpu_serial()->str:
 
 init_config = {
         'log_file': '',
-        'host_name': 'rapi-mqtt{}'.format(get_cpu_serial()[-4:]),
         'root_name': 'Test',
-        'measure_interval': 5,
+        'send_interval': 5,
         'device_number': get_cpu_serial(),
+        'watchdog': '/dev/watchdog',
         'id_significant_nums': 8,
         'broker_host': '10.100.107.199',
         'broker_port': 8883,

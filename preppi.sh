@@ -30,6 +30,4 @@ sed -i '/^#NTP=.*/a FallbackNTP=laiks.egl.local' /etc/systemd/timesyncd.conf
 chattr -i /etc/hosts
 echo '10.100.20.104   laiks.egl.local' >> /etc/hosts
 chattr +i /etc/hosts
-pip3 --no-input install configparser
-pip3 --no-input install paho-mqtt
 #/usr/sbin/shutdown -r now

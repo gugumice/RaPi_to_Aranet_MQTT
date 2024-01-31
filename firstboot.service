@@ -1,0 +1,8 @@
+[Unit]
+Description=First time boot config script launcher
+After=network.target
+[Service]
+Type=simple
+ExecStart=/opt/thermo/initthermo.sh
+[Install]
+WantedBy=multi-user.target 
