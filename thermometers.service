@@ -6,7 +6,7 @@ Wants=network-online.target
 [Service]
 #Type=idle
 Environment="SCRIPT_ARGS=-c /opt/thermo/config.ini"
-ExecStart="/opt/thermo/run_thermo.py" $SCRIPT_ARGS
+ExecStart="/opt/thermo/run_temps.py" $SCRIPT_ARGS
 
 WorkingDirectory=/opt/thermo/
 StandardOutput=inherit
