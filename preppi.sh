@@ -4,9 +4,9 @@ systemctl disable bluetooth.service
 systemctl disable hciuart.service
 apt-get update && apt-get -y upgrade
 
-ln /opt/therm/thermometers.service /lib/systemd/system/thermometers.service
-ln /opt/therm/firstboot.service /lib/systemd/system/firstboot.service
-ln /opt/therm/config.ini /home/pi/config.ini
+ln /opt/thermo/thermometers.service /lib/systemd/system/thermometers.service
+ln /opt/thermo/firstboot.service /lib/systemd/system/firstboot.service
+ln /opt/thermo/config.ini /home/pi/config.ini
 systemctl enable firstboot.service
 
 timedatectl set-timezone Europe/Riga
