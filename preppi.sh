@@ -20,6 +20,7 @@ mkdir /var/log/thermo
 touch /var/log/thermo/thermo.log
 ln -s /var/log/thermo/thermo.log /home/pi/thermo.log
 chown -R pi:thermo /var/log/thermo
+chown -R pi:thermo /opt/thermo/
 addgroup watchdog
 usermod -a -G watchdog pi
 apt-get --yes install python3-pip
