@@ -3,6 +3,6 @@ Description=First time boot config script launcher
 After=network.target
 [Service]
 Type=simple
-ExecStart=/opt/thermo/initthermo.sh
+ExecStart=/opt/thermo/initpi.sh
 [Install]
 WantedBy=multi-user.target 
