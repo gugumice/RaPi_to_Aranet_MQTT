@@ -148,7 +148,6 @@ def main() -> None:
     else:
         logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.DEBUG)
         logging.info('Logging to console')
-    #print('--------------',cfg['MQTT']["watchdog"].strip(),type(cfg['MQTT']["watchdog"]))
     if len(cfg['MQTT']["watchdog"].strip()) > 0:
         try:
             wdObj = open(cfg['MQTT']["watchdog"], "w")
@@ -172,6 +171,6 @@ def main() -> None:
             msg_sent_last=datetime.now()
             logging.debug('Sending thermometer readings')
         sleep(10)
-
+        
 if __name__ == '__main__':
     main()
