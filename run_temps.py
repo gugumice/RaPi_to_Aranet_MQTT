@@ -154,23 +154,20 @@ def main() -> None:
             wdObj = open(cfg['MQTT']["watchdog"], "w")
             logging.info("Watchdog enabled on {}".format(cfg['MQTT']["watchdog"]))
         except Exception as e:
-            logging.error(e)
-
+            logging.error(e
     w1_sensors=get_w1sensors(w1_dev_path)
     retained_messages = make_retain_messages(w1_sensors)
     send_mqtt_msg(retained_messages, host=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']), retain=False, client=cfg['MQTT']['device_number'])
     #Set timer for sending interval
-    msg_sent_interval = timedelta(float(cfg['MQTT']['send_interval'])*60)
+    msg_sent_interval = timedelta(minutes=float(cfg['MQTT']['send_interval']))
     msg_sent_last = datetime.now() - msg_sent_interval
-    print(msg_sent_interval,msg_sent_last)
-
     while True:
         #Pat watchdog
         if wdObj is not None:
             print("V", file=wdObj, flush=True)
         take_temperatures(w1_sensors)
         temperature_messages = make_temperature_messages(temperature_measurements)
-        if (msg_sent_last + msg_sent_interval) < datetime.now():
+        if datetime.now() > msg_sent_last + msg_sent_interval :
             send_mqtt_msg(temperature_messages, host=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']), retain=False, client=cfg['MQTT']['device_number'])
             msg_sent_last=datetime.now()
             logging.debug('Sending thermometer readings')
