@@ -13,14 +13,12 @@ cfg = configparser.ConfigParser()
 w1_dev_path = '/sys/bus/w1/devices/??-*'
 temperature_measurements={}
 
-
 def get_w1sensors(path) -> list:
     sensors = glob.glob(path)
     if len(sensors) == 0:
         logging.error('W1 devices not found')
         sys.exit(1)
     return(sensors)
-
 
 def read_sensor(sensor_id) -> None:
     """
@@ -55,7 +53,6 @@ def take_temperatures(w1_sensors) -> None:
         t.start()
     for t in threads:
         t.join()
-
 
 def make_retain_messages(w1_sensors) -> list:
     '''
@@ -100,7 +97,10 @@ def make_temperature_messages(temperature_measurements) -> list:
         messages.append((topic, payload))
     return(messages)
 
-def send_mqtt_msg(messages,host='10.100.107.199',port=8883,qos=0,retain=False,client=None) -> bool:
+def send_mqtt_msg(messages,host='10.100.107.199', port=8883,qos=0, retain=False,client=None) -> bool:
+    '''
+    Send MQTT messages to broker
+    '''
     logging.debug('Sending host: {}, port: {}, qos: {} retain: {}'.format(host,port,qos,retain))
     client = mqtt.Client(client)
     try:
@@ -153,11 +153,12 @@ def main() -> None:
             wdObj = open(cfg['MQTT']["watchdog"], "w")
             logging.info("Watchdog enabled on {}".format(cfg['MQTT']["watchdog"]))
         except Exception as e:
-            logging.error(e
+            logging.error(e)
+
     w1_sensors=get_w1sensors(w1_dev_path)
     retained_messages = make_retain_messages(w1_sensors)
     send_mqtt_msg(retained_messages, host=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']), retain=False, client=cfg['MQTT']['device_number'])
-    #Set timer for sending interval
+    #Set timer for sending interval (minutes)
     msg_sent_interval = timedelta(minutes=float(cfg['MQTT']['send_interval']))
     msg_sent_last = datetime.now() - msg_sent_interval
     while True:
@@ -166,11 +167,11 @@ def main() -> None:
             print("V", file=wdObj, flush=True)
         take_temperatures(w1_sensors)
         temperature_messages = make_temperature_messages(temperature_measurements)
-        if datetime.now() > msg_sent_last + msg_sent_interval :
+        if datetime.now() > msg_sent_last + msg_sent_interval:
             send_mqtt_msg(temperature_messages, host=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']), retain=False, client=cfg['MQTT']['device_number'])
             msg_sent_last=datetime.now()
             logging.debug('Sending thermometer readings')
         sleep(10)
-        
+
 if __name__ == '__main__':
     main()
