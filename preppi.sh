@@ -25,6 +25,7 @@ addgroup watchdog
 usermod -a -G watchdog pi
 apt-get --yes install python3-pip
 sed -i '/^\[global\]$/a break-system-packages = true' /etc/pip.conf
+pip install paho-mqtt
 
 echo 'KERNEL=="watchdog", MODE="0660", GROUP="watchdog"' > /etc/udev/rules.d/60-watchdog.rules
 sed -i '/^#NTP=.*/a FallbackNTP=laiks.egl.local' /etc/systemd/timesyncd.conf
