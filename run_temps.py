@@ -10,10 +10,16 @@ from datetime import datetime,timedelta
 from time import sleep
 
 cfg = configparser.ConfigParser()
+#1W device path
 w1_dev_path = '/sys/bus/w1/devices/??-*'
+#Dict for DS1820 readings
 temperature_measurements={}
+lock=threading.Lock()
 
 def get_w1sensors(path) -> list:
+    '''
+    Returns list of 1W sensors
+    '''
     sensors = glob.glob(path)
     if len(sensors) == 0:
         logging.error('W1 devices not found')
@@ -32,13 +38,16 @@ def read_sensor(sensor_id) -> None:
             raw_lines = s.readlines()
     except Exception as e:
         logging.error(e)
-        temperature_measurements[id]=None
+        with lock:
+            temperature_measurements[id]=None
         return()
     if raw_lines[0].strip()[-3:] == 'YES':
         temp_pos=raw_lines[1].find('t=')
-        temperature_measurements[id] = round(float(raw_lines[1][temp_pos+2:])/1000,2)
+        with lock:
+            temperature_measurements[id] = round(float(raw_lines[1][temp_pos+2:])/1000,2)
     else:
-        temperature_measurements[id]=None
+        with lock:
+            temperature_measurements[id]=None
         logging.error('{} CRC error'.format(sensor_id))
 
 def take_temperatures(w1_sensors) -> None:
@@ -48,6 +57,7 @@ def take_temperatures(w1_sensors) -> None:
     '''
     threads = []
     for s in w1_sensors:
+        
         t = threading.Thread(target=read_sensor, args=(s,))
         threads.append(t)
         t.start()
@@ -100,6 +110,7 @@ def make_temperature_messages(temperature_measurements) -> list:
 def send_mqtt_msg(messages,host='10.100.107.199', port=8883,qos=0, retain=False,client=None) -> bool:
     '''
     Send MQTT messages to broker
+    Return True if sending succeded
     '''
     logging.debug('Sending host: {}, port: {}, qos: {} retain: {}'.format(host,port,qos,retain))
     client = mqtt.Client(client)
@@ -115,8 +126,39 @@ def send_mqtt_msg(messages,host='10.100.107.199', port=8883,qos=0, retain=False,
     client.disconnect()
     return(True)
 
+def initialize_logging(cfg) -> None:
+    '''
+    Set up logging
+    '''
+    if len(cfg['MQTT']["log_file"]) > 0:
+        try:
+            logging.basicConfig(
+                format="%(asctime)s - %(message)s",
+                filename=cfg['MQTT']["log_file"],
+                filemode="w",
+                level=logging.INFO,
+            )
+            logging.info('Logging to {}.'.format(cfg['MQTT']["log_file"]))
+        except:
+            logging.error('Error opening {}. Logging to console'.format(cfg['MQTT']["log_file"]))
+    else:
+        logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.DEBUG)
+        logging.info('Logging to console')
+def initialize_watcdog(cfg) -> object:
+    '''
+    Set up watchdog
+    '''
+    if len(cfg['MQTT']["watchdog"].strip()) > 0:
+        try:
+            watchdog_obj = open(cfg['MQTT']["watchdog"], "w")
+            logging.info("Watchdog enabled on {}".format(cfg['MQTT']["watchdog"]))
+        except Exception as e:
+            logging.error(e)
+        return(watchdog_obj)
+    return(None)
+
 def main() -> None:
-    wdObj = None
+    watchdog_obj = None
     app_path=os.path.dirname(os.path.realpath(__file__))
     parser = argparse.ArgumentParser(description="Rapi as Aranet MQTT base")
     parser.add_argument(
@@ -134,26 +176,9 @@ def main() -> None:
         logging.critical('{}\n{}'.format(args.config,e))
         sys.exit(1)
 
-    if len(cfg['MQTT']["log_file"]) > 0:
-        try:
-            logging.basicConfig(
-                format="%(asctime)s - %(message)s",
-                filename=cfg['MQTT']["log_file"],
-                filemode="w",
-                level=logging.INFO,
-            )
-            logging.info('Logging to {}.'.format(cfg['MQTT']["log_file"]))
-        except:
-            logging.error('Error opening {}. Logging to console'.format(cfg['MQTT']["log_file"]))
-    else:
-        logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.DEBUG)
-        logging.info('Logging to console')
-    if len(cfg['MQTT']["watchdog"].strip()) > 0:
-        try:
-            wdObj = open(cfg['MQTT']["watchdog"], "w")
-            logging.info("Watchdog enabled on {}".format(cfg['MQTT']["watchdog"]))
-        except Exception as e:
-            logging.error(e)
+    initialize_logging(cfg)
+
+    watchdog_obj = initialize_watcdog(cfg)
 
     w1_sensors=get_w1sensors(w1_dev_path)
     retained_messages = make_retain_messages(w1_sensors)
@@ -163,8 +188,8 @@ def main() -> None:
     msg_sent_last = datetime.now() - msg_sent_interval
     while True:
         #Pat watchdog
-        if wdObj is not None:
-            print("V", file=wdObj, flush=True)
+        if watchdog_obj is not None:
+            print("V", file=watchdog_obj, flush=True)
         take_temperatures(w1_sensors)
         temperature_messages = make_temperature_messages(temperature_measurements)
         if datetime.now() > msg_sent_last + msg_sent_interval:
