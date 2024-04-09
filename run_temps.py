@@ -88,6 +88,11 @@ def make_temp_mqtt_message(objSensor) -> list:
     return((topic, payload,0,0))
 
 def send_mqtt_msg(messages,hostname='10.100.107.199', port=8883, client_id=None) -> bool:
+    '''
+    Make MQTT messages to broker
+    In: list of MTQQ messages
+    Out: bool
+    '''
     if client_id is None:
         client_id=cfg['MQTT']['device_number'][-8:]
     client_id=cfg['MQTT']['device_number'][-8:]
@@ -99,9 +104,6 @@ def send_mqtt_msg(messages,hostname='10.100.107.199', port=8883, client_id=None)
     for m in messages:
         logging.info("Sent:".format(m))
     return(True)
-
-def make_sms_messages():
-    pass
 
 def main() -> None:
     global cfg
@@ -152,6 +154,7 @@ def main() -> None:
             o.read()
             if time.time() > last_mqtt_sent + mqtt_send_interval:
                 mqtt_msgs.append(make_temp_mqtt_message(o))
+                last_mqtt_sent = time.time()
             if o.alarm:
                 msg = "{}, Group: {} min: {} max: {} curr: {}".format(o.name, o.group, o.min_temp, o.max_temp, o.temp)
                 logging.info(msg)
@@ -162,9 +165,10 @@ def main() -> None:
             sms_messages = []
         if len(mqtt_msgs) > 0:
             send_mqtt_msg(mqtt_msgs, hostname=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']))
-            mqtt_msgs = []
+            mqtt_msgs =[]
         time.sleep(5)
     
+
 if __name__ == '__main__':
     try:
         main()
