@@ -89,7 +89,7 @@ def make_temp_mqtt_message(objSensor) -> list:
 
 def send_mqtt_msg(messages,hostname='10.100.107.199', port=8883, client_id=None) -> bool:
     if client_id is None:
-        client_id=int(cfg['MQTT']['device_number'][-8:])
+        client_id=cfg['MQTT']['device_number'][-8:]
     client_id=cfg['MQTT']['device_number'][-8:]
     try:
         publish.multiple(messages, hostname=hostname, port=port, client_id=client_id)
