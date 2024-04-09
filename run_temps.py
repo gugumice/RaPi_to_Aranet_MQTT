@@ -157,14 +157,14 @@ def main() -> None:
                 logging.info(msg)
                 sms_messages.append(msg)
                 o.resetAlarm()
-            if len(sms_messages) > 0:
-                send_sms(call = cfg['MQTT']['http_call'], phones = cfg['MQTT']['sms_recipients'].split(','), messages = sms_messages)
-                sms_messages = []
+        if len(sms_messages) > 0:
+            send_sms(call = cfg['MQTT']['http_call'], phones = cfg['MQTT']['sms_recipients'].split(','), messages = sms_messages)
+            sms_messages = []
         if len(mqtt_msgs) > 0:
             send_mqtt_msg(mqtt_msgs, hostname=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']))
+            mqtt_msgs = []
         time.sleep(5)
     
-
 if __name__ == '__main__':
     try:
         main()
