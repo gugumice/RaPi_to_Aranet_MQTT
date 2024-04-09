@@ -4,8 +4,7 @@ import logging
 import os, socket
 import argparse
 import configparser
-from time import sleep
-from run_temps import get_w1sensors
+from readSensors import get_w1sensors
 logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.INFO)
 
 def get_cpu_serial()->str:
@@ -27,14 +26,16 @@ def get_cpu_serial()->str:
 init_config = {
         'log_file': '',
         'root_name': 'Test',
-        'send_interval': 5,
+        'mqtt_send_interval_mins': 5,
         'device_number': get_cpu_serial(),
         'watchdog': '/dev/watchdog',
         'id_significant_nums': 8,
         'broker_host': '10.100.107.199',
         'broker_port': 8883,
-        'w1_dev_path' : '/sys/bus/w1/devices/??-*',
-        'init_sensor_params' : {'name': 'Term #', 'group': 'Ledusskapis', 'groupId': 1, 'productNumber': 'DS18B20'}
+        'w1_dev_path' : '/sys/bus/w1/devices/28-*',
+        'sms_recipients' : '+37129413099,+37129255825',
+        'http_call' : "http://cache.egl.local/csp/sarmite/sys.sms.cls?number={}&text={}",
+        'init_sensor_params' : {'name': 'Term #', 'group': 'Ledusskapis', 'groupId': 1, 'productNumber': 'DS18B20', 'min_temp':2.0, 'max_temp':8.0, 'alarm_grace_min': 10}
         }
 
 def make_actual_config(config)->dict:
@@ -51,7 +52,11 @@ def make_actual_config(config)->dict:
         sl[sensor] = {'name': init_config['init_sensor_params']['name'].replace('#',str(i+1)),
                      'group': init_config['init_sensor_params']['group'],
                      'groupId': init_config['init_sensor_params']['groupId'],
-                     'productNumber': init_config['init_sensor_params']['productNumber']}
+                     'productNumber': init_config['init_sensor_params']['productNumber'],
+                     'min_temp': init_config['init_sensor_params']['min_temp'],
+                     'max_temp': init_config['init_sensor_params']['max_temp'],
+                     'alarm_grace_min': init_config['init_sensor_params']['alarm_grace_min']
+                     }
     ac = {}
     # Delete init key
     del config['init_sensor_params']
