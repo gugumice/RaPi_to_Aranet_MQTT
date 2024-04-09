@@ -4,7 +4,7 @@ import logging
 import os, socket
 import argparse
 import configparser
-from readSensors import get_w1sensors
+from run_temps import get_w1sensors
 logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.INFO)
 
 def get_cpu_serial()->str:
