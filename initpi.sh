@@ -17,5 +17,4 @@ sed -i '/^#NTP=.*/a FallbackNTP=laiks.egl.local' /etc/systemd/timesyncd.conf
 echo '10.100.20.104   laiks.egl.local' >> /etc/hosts
 echo '10.100.50.102   cache.egl.local' >> /etc/hosts
 #chattr +i /etc/hosts
-sleep 2
 /sbin/shutdown -r now
