@@ -148,10 +148,13 @@ def main() -> None:
     send_mqtt_msg(mqtt_msgs, hostname=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']))
     last_mqtt_sent = time.time() - mqtt_send_interval
     sms_messages = []
+    send_sms(call = cfg['MQTT']['http_call'], phones = [cfg['MQTT']['sms_recipients'].split(',')], messages = 'RPI #{} iesl.'.format(cfg['MQTT']['device_number']))
     mqtt_msgs = []
     while running:
         for o in w1_sensor_array:
             o.read()
+            if o.status in ('CRC Error','N/A'):
+                sms_messages.append('{}:{} {}'.format(o.id, o.name, o.status))
             if time.time() > last_mqtt_sent + mqtt_send_interval:
                 mqtt_msgs.append(make_temp_mqtt_message(o))
                 last_mqtt_sent = time.time()
