@@ -52,7 +52,6 @@ def make_retain_mqtt_messages(w1_sensors) -> list:
     global cfg
     sign_num=int(cfg['MQTT']['id_significant_nums'])
     messages = []
-
     for s in w1_sensors:
         id = s.id[-sign_num:]
         deviceNumber = s.deviceNumber[-sign_num:]
@@ -132,7 +131,13 @@ def main() -> None:
     w1_sensor_array=[]
     for t in w1_sensors:
         o=TempSensor(t)
-        sd = json.loads(cfg['sensors'][o.id].replace("'", '"'))
+        try:
+            sd = json.loads(cfg['sensors'][o.id].replace("'", '"'))
+        except KeyError as e:
+            m = 'Sensor {} not found in w1_devices'.format(e)
+            send_sms(call = cfg['MQTT']['http_call'], phones = [cfg['MQTT']['sms_recipients'].split(',')], messages = [m])
+            time.sleep(2)
+            sys.exit(1)
         o.name = sd['name']
         o.group = sd['group']
         o.groupId = sd['groupId']
@@ -146,9 +151,13 @@ def main() -> None:
     #Send retained MQTT messages (sensor names,groups,etc)
     mqtt_msgs = make_retain_mqtt_messages(w1_sensor_array)
     send_mqtt_msg(mqtt_msgs, hostname=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']))
+    #Send ON SMS message
+    m = 'RPI {} +'.format(cfg['MQTT']['device_number'][-int(cfg['MQTT']['id_significant_nums']):])
+    send_sms(call = cfg['MQTT']['http_call'], phones = [cfg['MQTT']['sms_recipients'].split(',')], messages = [m])
+    del m
+
     last_mqtt_sent = time.time() - mqtt_send_interval
     sms_messages = []
-    send_sms(call = cfg['MQTT']['http_call'], phones = [cfg['MQTT']['sms_recipients'].split(',')], messages = 'RPI #{} iesl.'.format(cfg['MQTT']['device_number']))
     mqtt_msgs = []
     while running:
         for o in w1_sensor_array:
