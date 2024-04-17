@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#https://github.com/eclipse/paho.mqtt.python
 import os,sys
 import argparse
 import logging
@@ -12,6 +13,7 @@ from ds18b20_lib import TempSensor,get_w1sensors
 running = True
 
 cfg = None
+mqtt_send_retained_interval = 60
 
 def init_logging(cfg) -> None:
     '''
@@ -54,7 +56,7 @@ def make_retain_mqtt_messages(w1_sensors) -> list:
     messages = []
     for s in w1_sensors:
         id = s.id[-sign_num:]
-        deviceNumber = s.deviceNumber[-sign_num:]
+        deviceNumber = s.deviceNumber[-12:]
         msg_topic = '{}/{}/sensors/{}/name/'.format(cfg['MQTT']['root_name'],deviceNumber,id)
         msg_payload = s.name
         messages.append((msg_topic, msg_payload,0,1))
@@ -81,9 +83,8 @@ def make_temp_mqtt_message(objSensor) -> list:
     global cfg
     sign_num = int(cfg['MQTT']['id_significant_nums'])
     id = objSensor.id[-sign_num:]
-    deviceNumber = objSensor.deviceNumber[-sign_num:]
-    topic='{}/{}/sensors/{}/measurements'.format(cfg['MQTT']['root_name'], deviceNumber, id)
-    payload=json.dumps({'temperature': objSensor.temp, 'rssi': 0, 'time': int(time.time()), "battery": "1.00"})
+    topic='{}/{}/sensors/{}/json/measurements'.format(cfg['MQTT']['root_name'], objSensor.deviceNumber, id)
+    payload=json.dumps({'temperature': str(objSensor.temp), 'rssi': '0', 'time': int(time.time()), 'battery': "1"})
     return((topic, payload,0,0))
 
 def send_mqtt_msg(messages,hostname='10.100.107.199', port=8883, client_id=None) -> bool:
@@ -126,6 +127,7 @@ def main() -> None:
         sys.exit(1)
     init_logging(cfg)
     mqtt_send_interval = 60 * float(cfg['MQTT']['mqtt_send_interval_mins'])
+    mqtt_send_retained_time = time.time()
     #Initialize w1 sensor ojects
     w1_sensors = get_w1sensors(cfg['MQTT']['w1_dev_path']) 
     w1_sensor_array=[]
@@ -135,38 +137,41 @@ def main() -> None:
             sd = json.loads(cfg['sensors'][o.id].replace("'", '"'))
         except KeyError as e:
             m = 'Sensor {} not found in w1_devices'.format(e)
-            send_sms(call = cfg['MQTT']['http_call'], phones = [cfg['MQTT']['sms_recipients'].split(',')], messages = [m])
+            send_sms(call = cfg['MQTT']['http_call'], phones = [cfg['MQTT']['sms_recipients'].split(',')[0]], messages = [m])
             time.sleep(2)
             sys.exit(1)
         o.name = sd['name']
         o.group = sd['group']
         o.groupId = sd['groupId']
         o.productNumber = sd['productNumber']
-        o.deviceNumber = cfg['MQTT']['device_number']
+        o.deviceNumber = cfg['MQTT']['device_number'][-12:]
         o.min_temp = float(sd['min_temp'])
         o.max_temp = float(sd['max_temp'])
         o.alarm_grace_secs = sd['alarm_grace_min']*60
         w1_sensor_array.append(o)
     [s.start() for s in w1_sensor_array]
-    #Send retained MQTT messages (sensor names,groups,etc)
-    mqtt_msgs = make_retain_mqtt_messages(w1_sensor_array)
-    send_mqtt_msg(mqtt_msgs, hostname=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']))
-    #Send ON SMS message
-    m = 'RPI {} +'.format(cfg['MQTT']['device_number'][-int(cfg['MQTT']['id_significant_nums']):])
-    send_sms(call = cfg['MQTT']['http_call'], phones = [cfg['MQTT']['sms_recipients'].split(',')], messages = [m])
-    del m
 
-    last_mqtt_sent = time.time() - mqtt_send_interval
+    #Send Start SMS message to first phone num in list
+    m = 'RPI {} On'.format(cfg['MQTT']['device_number'][-int(cfg['MQTT']['id_significant_nums']):])
+    send_sms(call = cfg['MQTT']['http_call'], phones = [cfg['MQTT']['sms_recipients'].split(',')[0]], messages = [m])
+    del m
+    mqtt_send_time = time.time() - mqtt_send_interval - 3
+    mqtt_send_retained_time = time.time() - mqtt_send_retained_interval - 3
     sms_messages = []
-    mqtt_msgs = []
+    mqtt_mesages = []
     while running:
         for o in w1_sensor_array:
             o.read()
+            if time.time() > mqtt_send_retained_time + mqtt_send_retained_interval:
+            #Send retained MQTT messages (sensor names,groups,etc)
+                print('>>>>>')
+                mqtt_mesages = make_retain_mqtt_messages(w1_sensor_array)
+                mqtt_send_retained_time = time.time()
             if o.status in ('CRC Error','N/A'):
                 sms_messages.append('{}:{} {}'.format(o.id, o.name, o.status))
-            if time.time() > last_mqtt_sent + mqtt_send_interval:
-                mqtt_msgs.append(make_temp_mqtt_message(o))
-                last_mqtt_sent = time.time()
+            if time.time() > mqtt_send_time + mqtt_send_interval:
+                mqtt_mesages.append(make_temp_mqtt_message(o))
+                mqtt_send_time = time.time()
             if o.alarm:
                 msg = "{}, Group: {} min: {} max: {} curr: {}".format(o.name, o.group, o.min_temp, o.max_temp, o.temp)
                 logging.info(msg)
@@ -175,9 +180,9 @@ def main() -> None:
         if len(sms_messages) > 0:
             send_sms(call = cfg['MQTT']['http_call'], phones = cfg['MQTT']['sms_recipients'].split(','), messages = sms_messages)
             sms_messages = []
-        if len(mqtt_msgs) > 0:
-            send_mqtt_msg(mqtt_msgs, hostname=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']))
-            mqtt_msgs =[]
+        if len(mqtt_mesages) > 0:
+            send_mqtt_msg(mqtt_mesages, hostname=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']))
+            mqtt_mesages =[]
         time.sleep(5)
     
 
