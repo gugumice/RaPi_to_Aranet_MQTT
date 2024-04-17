@@ -25,13 +25,13 @@ def init_logging(cfg) -> None:
                 format="%(asctime)s - %(message)s",
                 filename=cfg['MQTT']["log_file"],
                 filemode="w",
-                level=logging.INFO,
+                level=logging.ERROR,
             )
             logging.info('Logging to {}.'.format(cfg['MQTT']["log_file"]))
         except:
             logging.error('Error opening {}. Logging to console'.format(cfg['MQTT']["log_file"]))
     else:
-        logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.DEBUG)
+        logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.INFO)
         logging.info('Logging to console')
 
 def send_sms(call, phones, messages):
@@ -150,7 +150,6 @@ def main() -> None:
         o.alarm_grace_secs = sd['alarm_grace_min']*60
         w1_sensor_array.append(o)
     [s.start() for s in w1_sensor_array]
-
     #Send Start SMS message to first phone num in list
     m = 'RPI {} On'.format(cfg['MQTT']['device_number'][-int(cfg['MQTT']['id_significant_nums']):])
     send_sms(call = cfg['MQTT']['http_call'], phones = [cfg['MQTT']['sms_recipients'].split(',')[0]], messages = [m])
@@ -164,10 +163,10 @@ def main() -> None:
             o.read()
             if time.time() > mqtt_send_retained_time + mqtt_send_retained_interval:
             #Send retained MQTT messages (sensor names,groups,etc)
-                print('>>>>>')
                 mqtt_mesages = make_retain_mqtt_messages(w1_sensor_array)
                 mqtt_send_retained_time = time.time()
             if o.status in ('CRC Error','N/A'):
+                #Send sms if error reading sensor
                 sms_messages.append('{}:{} {}'.format(o.id, o.name, o.status))
             if time.time() > mqtt_send_time + mqtt_send_interval:
                 mqtt_mesages.append(make_temp_mqtt_message(o))
@@ -184,7 +183,6 @@ def main() -> None:
             send_mqtt_msg(mqtt_mesages, hostname=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']))
             mqtt_mesages =[]
         time.sleep(5)
-    
 
 if __name__ == '__main__':
     try:
