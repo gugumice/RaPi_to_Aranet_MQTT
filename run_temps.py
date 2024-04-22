@@ -8,11 +8,11 @@ import time
 import json
 import requests
 import paho.mqtt.publish as publish
-
 from ds18b20_lib import TempSensor,get_w1sensors
-running = True
 
+running = True
 cfg = None
+wdObj = None
 mqtt_send_retained_interval = 60
 
 def init_logging(cfg) -> None:
@@ -33,6 +33,16 @@ def init_logging(cfg) -> None:
     else:
         logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.INFO)
         logging.info('Logging to console')
+def init_watchdog:
+    global wdObj
+    if cfg['watchdog'] is not None:
+        try:
+            wdObj = open(cfg['watchdog'], "w")
+            logging.info("Watchdog enabled on {}".format(cfg['watchdog']))
+        except Exception as e:
+            logging.error(e)
+    else:
+        logging.info("Watchdog disabled")
 
 def send_sms(call, phones, messages):
     '''
@@ -107,6 +117,7 @@ def send_mqtt_msg(messages,hostname='10.100.107.199', port=8883, client_id=None)
 
 def main() -> None:
     global cfg
+    global wdObj
     cfg = configparser.ConfigParser()
     app_path=os.path.dirname(os.path.realpath(__file__))
     parser = argparse.ArgumentParser(description="Rapi as Aranet MQTT base")
@@ -159,6 +170,10 @@ def main() -> None:
     sms_messages = []
     mqtt_mesages = []
     while running:
+        #Pat watchdog
+        if wdObj is not None:
+            print('1',file = wdObj, flush = True)
+        
         for o in w1_sensor_array:
             o.read()
             if time.time() > mqtt_send_retained_time + mqtt_send_retained_interval:
@@ -189,4 +204,8 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         running = False
-        print("\nExiting")
+        if wdObj is not None:
+            print('V', file=wdObj, flush=True)
+            print('Watchdog disabled')
+        print('\nExiting...')
+        sys.exit(0)
