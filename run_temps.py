@@ -13,7 +13,9 @@ from ds18b20_lib import TempSensor,get_w1sensors
 running = True
 cfg = None
 wdObj = None
-mqtt_send_retained_interval = 60
+
+#Interval in secs to send retained messages
+mqtt_send_retained_interval = 3600
 
 def init_logging(cfg) -> None:
     '''
@@ -33,7 +35,7 @@ def init_logging(cfg) -> None:
     else:
         logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.INFO)
         logging.info('Logging to console')
-def init_watchdog:
+def init_watchdog():
     global wdObj
     if cfg['watchdog'] is not None:
         try:
@@ -173,7 +175,6 @@ def main() -> None:
         #Pat watchdog
         if wdObj is not None:
             print('1',file = wdObj, flush = True)
-        
         for o in w1_sensor_array:
             o.read()
             if time.time() > mqtt_send_retained_time + mqtt_send_retained_interval:
@@ -185,7 +186,6 @@ def main() -> None:
                 sms_messages.append('{}:{} {}'.format(o.id, o.name, o.status))
             if time.time() > mqtt_send_time + mqtt_send_interval:
                 mqtt_mesages.append(make_temp_mqtt_message(o))
-                mqtt_send_time = time.time()
             if o.alarm:
                 msg = "{}, Group: {} min: {} max: {} curr: {}".format(o.name, o.group, o.min_temp, o.max_temp, o.temp)
                 logging.info(msg)
@@ -197,6 +197,7 @@ def main() -> None:
         if len(mqtt_mesages) > 0:
             send_mqtt_msg(mqtt_mesages, hostname=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']))
             mqtt_mesages =[]
+            mqtt_send_time = time.time()
         time.sleep(5)
 
 if __name__ == '__main__':
