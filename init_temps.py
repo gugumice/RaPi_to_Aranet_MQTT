@@ -28,6 +28,7 @@ init_config = {
         'root_name': 'Test',
         'mqtt_send_interval_mins': 5,
         'device_number': get_cpu_serial(),
+        'device_name': socket.gethostname(),
         'watchdog': '/dev/watchdog',
         'id_significant_nums': 8,
         'broker_host': '10.100.107.199',
