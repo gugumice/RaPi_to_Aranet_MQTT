@@ -14,7 +14,7 @@ running = True
 cfg = None
 wdObj = None
 
-#Interval in secs to send retained messages
+#Interval in secs to send retained messakes
 mqtt_send_retained_interval = 3600
 
 def init_logging(cfg) -> None:
@@ -109,6 +109,7 @@ def send_mqtt_msg(messages,hostname='10.100.107.199', port=8883, client_id=None)
         client_id=cfg['MQTT']['device_number'][-8:]
     client_id=cfg['MQTT']['device_number'][-8:]
     try:
+        #print(messages,hostname,port,client_id)
         publish.multiple(messages, hostname=hostname, port=port, client_id=client_id)
     except Exception as e:
         logging.error("Error sending message: {}".format(e))
@@ -168,9 +169,11 @@ def main() -> None:
     send_sms(call = cfg['MQTT']['http_call'], phones = [cfg['MQTT']['sms_recipients'].split(',')[0]], messages = [m])
     del m
     mqtt_send_time = time.time() - mqtt_send_interval - 3
-    mqtt_send_retained_time = time.time() - mqtt_send_retained_interval - 3
+    mqtt_send_retained_time = time.time() - mqtt_send_retained_interval -3
+
     sms_messages = []
-    mqtt_mesages = []
+    mqtt_messages = []
+    #print(time.time() > mqtt_send_retained_time + mqtt_send_retained_interval)
     while running:
         #Pat watchdog
         if wdObj is not None:
@@ -179,13 +182,13 @@ def main() -> None:
             o.read()
             if time.time() > mqtt_send_retained_time + mqtt_send_retained_interval:
             #Send retained MQTT messages (sensor names,groups,etc)
-                mqtt_mesages = make_retain_mqtt_messages(w1_sensor_array)
+                mqtt_messages = make_retain_mqtt_messages(w1_sensor_array)
                 mqtt_send_retained_time = time.time()
             if o.status in ('CRC Error','N/A'):
                 #Send sms if error reading sensor
                 sms_messages.append('{}:{} {}'.format(o.id, o.name, o.status))
             if time.time() > mqtt_send_time + mqtt_send_interval:
-                mqtt_mesages.append(make_temp_mqtt_message(o))
+                mqtt_messages.append(make_temp_mqtt_message(o))
             if o.alarm:
                 msg = "{}, Group: {} min: {} max: {} curr: {}".format(o.name, o.group, o.min_temp, o.max_temp, o.temp)
                 logging.info(msg)
@@ -194,9 +197,9 @@ def main() -> None:
         if len(sms_messages) > 0:
             send_sms(call = cfg['MQTT']['http_call'], phones = cfg['MQTT']['sms_recipients'].split(','), messages = sms_messages)
             sms_messages = []
-        if len(mqtt_mesages) > 0:
-            send_mqtt_msg(mqtt_mesages, hostname=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']))
-            mqtt_mesages =[]
+        if len(mqtt_messages) > 0:
+            send_mqtt_msg(mqtt_messages, hostname=cfg['MQTT']['broker_host'], port=int(cfg['MQTT']['broker_port']))
+            mqtt_messages =[]
             mqtt_send_time = time.time()
         time.sleep(5)
 
