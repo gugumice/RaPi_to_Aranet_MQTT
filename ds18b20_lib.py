@@ -48,6 +48,7 @@ class TempSensor(Ds18b20Sensor):
         self.groupId = None
         self.productNumber = 'DS18B20'
         self.deviceNumber = None
+        self.deviceName = None
         self.max_temp = 8.00
         self.min_temp = 2.00
         self.alarm_grace_secs = 30
