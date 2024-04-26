@@ -69,19 +69,19 @@ def make_retain_mqtt_messages(w1_sensors) -> list:
     for s in w1_sensors:
         id = s.id[-sign_num:]
         deviceNumber = s.deviceNumber[-12:]
-        msg_topic = '{}/{}/sensors/{}/name/'.format(cfg['MQTT']['root_name'],deviceNumber,id)
+        msg_topic = '{}/{}/sensors/{}/name'.format(cfg['MQTT']['root_name'],deviceNumber,id)
         msg_payload = s.name
         messages.append((msg_topic, msg_payload,0,1))
         #productNumber
-        msg_topic = '{}/{}/sensors/{}/productNumber/'.format(cfg['MQTT']['root_name'],deviceNumber,id)
+        msg_topic = '{}/{}/sensors/{}/productNumber'.format(cfg['MQTT']['root_name'],deviceNumber,id)
         msg_payload = s.productNumber
         messages.append((msg_topic, msg_payload,0,1))
         #group
-        msg_topic = '{}/{}/sensors/{}/group/'.format(cfg['MQTT']['root_name'],deviceNumber,id)
+        msg_topic = '{}/{}/sensors/{}/group'.format(cfg['MQTT']['root_name'],deviceNumber,id)
         msg_payload = s.group
         messages.append((msg_topic, msg_payload,0,1))
         #groupid
-        msg_topic = '{}/{}/sensors/{}/groupId/'.format(cfg['MQTT']['root_name'],deviceNumber,id)
+        msg_topic = '{}/{}/sensors/{}/groupId'.format(cfg['MQTT']['root_name'],deviceNumber,id)
         msg_payload = s.groupId
         messages.append((msg_topic, msg_payload,0,1))
     return(messages)
