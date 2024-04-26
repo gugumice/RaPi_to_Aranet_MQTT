@@ -68,6 +68,9 @@ def make_retain_mqtt_messages(w1_sensors) -> list:
     messages = []
     for s in w1_sensors:
         id = s.id[-sign_num:]
+        msg_topic = '{}/{}/name'.format(cfg['MQTT']['root_name'],deviceNumber)
+        msg_payload = s.deviceName
+        messages.append((msg_topic, msg_payload,0,1))
         deviceNumber = s.deviceNumber[-12:]
         msg_topic = '{}/{}/sensors/{}/name'.format(cfg['MQTT']['root_name'],deviceNumber,id)
         msg_payload = s.name
@@ -159,6 +162,7 @@ def main() -> None:
         o.groupId = sd['groupId']
         o.productNumber = sd['productNumber']
         o.deviceNumber = cfg['MQTT']['device_number'][-12:]
+        o.deviceName = cfg['MQTT']['device_name']
         o.min_temp = float(sd['min_temp'])
         o.max_temp = float(sd['max_temp'])
         o.alarm_grace_secs = sd['alarm_grace_min']*60
