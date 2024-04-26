@@ -30,7 +30,7 @@ init_config = {
         'device_number': get_cpu_serial(),
         'device_name': socket.gethostname(),
         'watchdog': '/dev/watchdog',
-        'id_significant_nums': 8,
+        'id_significant_nums': 6,
         'broker_host': '10.100.107.199',
         'broker_port': 8883,
         'w1_dev_path' : '/sys/bus/w1/devices/28-*',
@@ -39,13 +39,11 @@ init_config = {
         'init_sensor_params' : {'name': 'Term #', 'group': 'Ledusskapis', 'groupId': 1, 'productNumber': 'DS18B20', 'min_temp':2.0, 'max_temp':8.0, 'alarm_grace_min': 10}
         }
 
-def make_actual_config(config)->dict:
+def make_actual_config(config: dict) -> dict:
     '''
-    Make config for actual RaPi
-    In: Initial configuration
-    Out: Actual default configuration with IDs of connected 1W sensors
-    '''
+    Make config for actual RaPi 
 
+    '''
     w1_sensors =  get_w1sensors(config['w1_dev_path'])
     sl = {}
     for i,s in enumerate(w1_sensors):
