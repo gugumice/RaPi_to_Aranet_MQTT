@@ -6,6 +6,7 @@ apt-get update && apt-get -y upgrade
 
 ln /opt/thermo/thermometers.service /lib/systemd/system/thermometers.service
 ln /opt/thermo/firstboot.service /lib/systemd/system/firstboot.service
+touch /opt/thermo/config.ini
 ln /opt/thermo/config.ini /home/pi/config.ini
 systemctl enable firstboot.service
 
