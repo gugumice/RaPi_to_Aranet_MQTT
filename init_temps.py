@@ -33,7 +33,7 @@ init_config: dict = {
         'broker_host': '10.100.107.199',
         'broker_port': 8883,
         'w1_dev_path' : '/sys/bus/w1/devices/28-*',
-        'sms_recipients' : '+37129413099,+37129255825',
+        'sms_recipients' : '+37129111111,+3712922222',
         'http_call' : "http://cache.egl.local/csp/sarmite/sys.sms.cls?number={}&text={}",
         'init_sensor_params' : {'name': 'Term #', 'group': 'Ledusskapis', 'groupId': 1, 'productNumber': 'DS18B20', 'min_temp':2.0, 'max_temp':8.0, 'alarm_grace_min': 10}
         }
