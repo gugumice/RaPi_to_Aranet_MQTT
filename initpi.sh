@@ -15,6 +15,7 @@ sed -i '/^127.0.0.1/s/.*/127.0.0.1\t'${newHostname}'/g' /etc/hosts
 sed -i '/^#NTP=.*/a FallbackNTP=laiks.egl.local' /etc/systemd/timesyncd.conf
 echo '10.100.20.104   laiks.egl.local' >> /etc/hosts
 echo '10.100.50.102   cache.egl.local' >> /etc/hosts
+chmod a+x /opt/thermo/*.py opt/thermo/*.sh
 python3 /opt/thermo/init_temps.py
 sleep 3
 /sbin/shutdown -r now
