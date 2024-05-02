@@ -17,7 +17,7 @@ wdObj = None
 #Interval in secs to send retained messakes
 mqtt_send_retained_interval = 3600
 
-def init_logging(cfg) -> None:
+def init_logging(cfg: dict) -> None:
     '''
     Set up logging
     '''
@@ -35,7 +35,7 @@ def init_logging(cfg) -> None:
     else:
         logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.INFO)
         logging.info('Logging to console')
-def init_watchdog():
+def init_watchdog() -> None:
     global wdObj
     if cfg['watchdog'] is not None:
         try:
@@ -46,7 +46,7 @@ def init_watchdog():
     else:
         logging.info("Watchdog disabled")
 
-def send_sms(call, phones, messages):
+def send_sms(call: str, phones: list, messages: list):
     '''
     Send sms
     '''
@@ -56,22 +56,22 @@ def send_sms(call, phones, messages):
             logging.info(call.format(phone,message))
             logging.info('Response: {}'.format(r))
 
-def make_retain_mqtt_messages(w1_sensors) -> list:
+def make_retain_mqtt_messages(w1_sensors: list) -> list:
     '''
     Make retainded MQTT messages for Aranet compatability
     from sensor data and config.ini device descriptors
-    In: array of w1 sensors
-    Out: List of topic,payload tuples as MTQQ messages
     '''
     global cfg
     sign_num=int(cfg['MQTT']['id_significant_nums'])
     messages = []
     for s in w1_sensors:
         id = s.id[-sign_num:]
+        deviceNumber = s.deviceNumber[-12:]
+        #Aranert device name
         msg_topic = '{}/{}/name'.format(cfg['MQTT']['root_name'],deviceNumber)
         msg_payload = s.deviceName
         messages.append((msg_topic, msg_payload,0,1))
-        deviceNumber = s.deviceNumber[-12:]
+        #sensor name
         msg_topic = '{}/{}/sensors/{}/name'.format(cfg['MQTT']['root_name'],deviceNumber,id)
         msg_payload = s.name
         messages.append((msg_topic, msg_payload,0,1))
@@ -89,11 +89,10 @@ def make_retain_mqtt_messages(w1_sensors) -> list:
         messages.append((msg_topic, msg_payload,0,1))
     return(messages)
 
-def make_temp_mqtt_message(objSensor) -> list:
+def make_temp_mqtt_message(objSensor: object) -> list:
     '''
     Make MQTT messages for Aranet compatability
-    In: DS18b20 class object
-    Out: List of topic,payload tuples as MTQQ messages
+
     '''
     global cfg
     sign_num = int(cfg['MQTT']['id_significant_nums'])
@@ -102,11 +101,10 @@ def make_temp_mqtt_message(objSensor) -> list:
     payload=json.dumps({'temperature': str(objSensor.temp), 'rssi': '0', 'time': int(time.time()), 'battery': "1"})
     return((topic, payload,0,0))
 
-def send_mqtt_msg(messages,hostname='10.100.107.199', port=8883, client_id=None) -> bool:
+def send_mqtt_msg(messages: list, hostname: str = '10.100.107.199', port: int = 8883, client_id = None) -> bool:
     '''
     Make MQTT messages to broker
-    In: list of MTQQ messages
-    Out: bool
+
     '''
     if client_id is None:
         client_id=cfg['MQTT']['device_number'][-8:]
@@ -206,7 +204,7 @@ def main() -> None:
             mqtt_messages =[]
             mqtt_send_time = time.time()
         time.sleep(5)
-
+        
 if __name__ == '__main__':
     try:
         main()
