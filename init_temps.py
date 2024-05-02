@@ -7,10 +7,9 @@ import configparser
 from run_temps import get_w1sensors
 logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.INFO)
 
-def get_cpu_serial()->str:
+def get_cpu_serial() -> str:
     """
     Get CPU serial id to use it as MSQT device ID
-    Returns: CPU ID
     """
     cpuserial = None
     try:
@@ -23,7 +22,7 @@ def get_cpu_serial()->str:
         logging.error(e)
     return(cpuserial)
 
-init_config = {
+init_config: dict = {
         'log_file': '',
         'root_name': 'Test',
         'mqtt_send_interval_mins': 5,
@@ -63,7 +62,7 @@ def make_actual_config(config: dict) -> dict:
     ac['sensors'] = sl
     return(ac)
 
-def main():
+def main() -> None:
     app_path=os.path.dirname(os.path.realpath(__file__))
     parser = argparse.ArgumentParser(description="Rapi as Aranet MQTT base")
     parser.add_argument(
