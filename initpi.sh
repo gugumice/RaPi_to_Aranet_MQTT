@@ -1,8 +1,4 @@
 #!/bin/bash
-if [ ! -e /home/pi ]; then
-    echo "Only run this on your pi."
-    exit 1
-fi
 systemctl enable thermometers.service
 systemctl disable firstboot.service
 raspi-config --expand-rootfs > /dev/null
