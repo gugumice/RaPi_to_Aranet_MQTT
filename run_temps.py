@@ -36,6 +36,9 @@ def init_logging(cfg: dict) -> None:
         logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.INFO)
         logging.info('Logging to console')
 def init_watchdog() -> None:
+    '''
+    Enable/disable watchdog
+    '''
     global wdObj
     if cfg['watchdog'] is not None:
         try:
@@ -103,7 +106,7 @@ def make_temp_mqtt_message(objSensor: object) -> list:
 
 def send_mqtt_msg(messages: list, hostname: str = '10.100.107.199', port: int = 8883, client_id = None) -> bool:
     '''
-    Make MQTT messages to broker
+    Send MQTT messages to broker
 
     '''
     if client_id is None:
@@ -172,7 +175,6 @@ def main() -> None:
     del m
     mqtt_send_time = time.time() - mqtt_send_interval - 3
     mqtt_send_retained_time = time.time() - mqtt_send_retained_interval -3
-
     sms_messages = []
     mqtt_messages = []
     #print(time.time() > mqtt_send_retained_time + mqtt_send_retained_interval)
