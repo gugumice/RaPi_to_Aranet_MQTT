@@ -49,7 +49,7 @@ def init_watchdog() -> None:
     else:
         logging.info("Watchdog disabled")
 
-def send_sms(call: str, phones: list, messages: list):
+def send_sms(call: str, phones: list, messages: list) -> None:
     '''
     Send sms
     '''
