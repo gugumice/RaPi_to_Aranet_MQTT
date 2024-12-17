@@ -119,7 +119,7 @@ def send_mqtt_msg(messages: list, hostname: str = '10.100.107.199', port: int = 
         logging.error("Error sending message: {}".format(e))
         return(False)
     for m in messages:
-        logging.info("Sent:".format(m))
+        logging.info("Sent: {}".format(m))
     return(True)
 
 def main() -> None:
@@ -170,7 +170,7 @@ def main() -> None:
         w1_sensor_array.append(o)
     [s.start() for s in w1_sensor_array]
     #Send Start SMS message to first phone num in list
-    m = 'RPI {} On'.format(cfg['MQTT']['device_number'][-int(cfg['MQTT']['id_significant_nums']):])
+    m = 'RPI {} On, Sensors: {}'.format(cfg['MQTT']['device_number'][-int(cfg['MQTT']['id_significant_nums']):], len(w1_sensor_array))
     send_sms(call = cfg['MQTT']['http_call'], phones = [cfg['MQTT']['sms_recipients'].split(',')[0]], messages = [m])
     del m
     mqtt_send_time = time.time() - mqtt_send_interval - 3
