@@ -80,7 +80,6 @@ def main():
     path = '/sys/bus/w1/devices/28-*'
     w1_sensors = [TempSensor(s) for s in get_w1sensors(path)]
     logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.DEBUG)
-    #[s.start() for s in w1_sensors]
     for i in range(5):
         [s.read() for s in w1_sensors]
         [print('stat:{}, alarm:{}, id:{}, temp:{}'.format(t.status, t.alarm, t.id, t.temp)) for t in w1_sensors]
