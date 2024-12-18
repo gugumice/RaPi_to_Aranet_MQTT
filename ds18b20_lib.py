@@ -17,27 +17,25 @@ def get_w1sensors(path) -> list:
 class Ds18b20Sensor(threading.Thread):
     def __init__(self,path):
         super().__init__()
-        self.path='{}/w1_slave'.format(path)
-        #self.id = path[path.rfind('/')+1:]
+        self.path='{}/temperature'.format(path)
         self.temp = None
         self.status = None
     def run(self):
-        self.temp = None
-        self.status = None
         try:
             with open(self.path,'r') as s:
-                raw_lines = s.readlines()
+                temp_raw = s.read().strip()
+                self.temp = round(int(temp_raw)/1000,2)
+                self.status = None
+        except FileNotFoundError:
+            self.status = 'Not found'
+            self.temp = None
+        except ValueError:
+            self.status = 'Invalid temperature data'
+            self.temp = None
         except Exception as e:
-            self.status = e
-            return
-        if raw_lines[0][29:35] == 'crc=00':
-            self.status = 'N/A'
-            return 
-        if (len(raw_lines) > 0) and (raw_lines[0].strip()[-3:] == 'YES'):
-                temp_pos=raw_lines[1].find('t=')
-                self.temp = round(float(raw_lines[1][temp_pos+2:])/1000,2)
-                return
-        self.status = 'CRC Error'
+            self.status = str(e)
+            self.temp = None
+            return()
 
 class TempSensor(Ds18b20Sensor):
     def __init__(self, path):
@@ -82,8 +80,8 @@ def main():
     path = '/sys/bus/w1/devices/28-*'
     w1_sensors = [TempSensor(s) for s in get_w1sensors(path)]
     logging.basicConfig(format = "%(levelname)s: %(asctime)s: %(message)s", level=logging.DEBUG)
-    [s.start() for s in w1_sensors]
-    for i in range(50):
+    #[s.start() for s in w1_sensors]
+    for i in range(5):
         [s.read() for s in w1_sensors]
         [print('stat:{}, alarm:{}, id:{}, temp:{}'.format(t.status, t.alarm, t.id, t.temp)) for t in w1_sensors]
         time.sleep(1)
